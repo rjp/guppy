@@ -6,6 +6,8 @@ module Guppy
     attr_accessor :calories
     attr_accessor :average_heart_rate
     attr_accessor :max_heart_rate
+    attr_accessor :max_cadence
+    attr_accessor :avg_speed
     attr_reader   :track_points
     
     def initialize
