@@ -53,6 +53,9 @@ module Guppy
       lap.average_heart_rate = lap_node.xpath('xmlns:AverageHeartRateBpm/xmlns:Value', namespaces).inner_text.to_i
       lap.max_heart_rate = lap_node.xpath('xmlns:MaximumHeartRateBpm/xmlns:Value', namespaces).inner_text.to_i
 
+      lap.max_cadence = lap_node.xpath('xmlns:Extensions/ae:LX/ae:MaxBikeCadence', namespaces).inner_text.to_i
+      lap.avg_speed = lap_node.xpath('xmlns:Extensions/ae:LX/ae:AvgSpeed', namespaces).inner_text.to_f
+
       lap_node.xpath('xmlns:Track/xmlns:Trackpoint', namespaces).each do |track_point_node|
         lap.track_points << build_track_point(track_point_node)
       end
@@ -68,12 +71,23 @@ module Guppy
       track_point.distance = track_point_node.xpath('xmlns:DistanceMeters', namespaces).inner_text.to_f
       track_point.heart_rate = track_point_node.xpath('xmlns:HeartRateBpm/xmlns:Value', namespaces).inner_text.to_i
       track_point.time = Time.parse(track_point_node.xpath('xmlns:Time', namespaces).inner_text)
+
+      # TODO this needs making conditional on a) activity type and b) whether the field exists
+      # (much better to have .watts return nil if there's no data than 0.0)
+      track_point.cadence = track_point_node.xpath('xmlns:Cadence', namespaces).inner_text.to_i
+      track_point.watts = track_point_node.xpath('xmlns:Extensions/ae:TPX/ae:Watts', namespaces).inner_text.to_i
+      track_point.speed = track_point_node.xpath('xmlns:Extensions/ae:TPX/ae:Speed', namespaces).inner_text.to_f
       
       track_point
     end
     
     def namespaces
       @namespaces ||= @doc.root.namespaces
+
+      # External sensors and extra information are -sometimes- under another namespace
+      @namespaces['ae'] = "http://www.garmin.com/xmlschemas/ActivityExtension/v2"
+
+      return @namespaces
     end
   end
 end
