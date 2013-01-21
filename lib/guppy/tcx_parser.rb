@@ -6,6 +6,22 @@ module Guppy
       parser
     end
 
+    # Return an int if our node exists, has text, and that text isn't just whitespace
+    def node_int(value)
+        if value.nil? or value.inner_text.nil? or value.inner_text.strip.empty? then
+            return nil
+        end
+        return value.inner_text.to_i
+    end
+
+    # Return a float if our node exists, has text, and that text isn't just whitespace
+    def node_float(value)
+        if value.nil? or value.inner_text.nil? or value.inner_text.empty? then
+            return nil
+        end
+        return value.inner_text.to_f
+    end
+
     def initialize(file)
       @file = file
     end
@@ -72,11 +88,12 @@ module Guppy
       track_point.heart_rate = track_point_node.xpath('xmlns:HeartRateBpm/xmlns:Value', namespaces).inner_text.to_i
       track_point.time = Time.parse(track_point_node.xpath('xmlns:Time', namespaces).inner_text)
 
-      # TODO this needs making conditional on a) activity type and b) whether the field exists
-      # (much better to have .watts return nil if there's no data than 0.0)
-      track_point.cadence = track_point_node.xpath('xmlns:Cadence', namespaces).inner_text.to_i
-      track_point.watts = track_point_node.xpath('xmlns:Extensions/ae:TPX/ae:Watts', namespaces).inner_text.to_i
-      track_point.speed = track_point_node.xpath('xmlns:Extensions/ae:TPX/ae:Speed', namespaces).inner_text.to_f
+      bikecad = node_int(track_point_node.xpath('xmlns:Cadence', namespaces))
+      runcad = node_int(track_point_node.xpath('xmlns:Extensions/ae:TPX/ae:RunCadence', namespaces))
+      track_point.cadence = bikecad || runcad
+
+      track_point.watts = node_int(track_point_node.xpath('xmlns:Extensions/ae:TPX/ae:Watts', namespaces))
+      track_point.speed = node_float(track_point_node.xpath('xmlns:Extensions/ae:TPX/ae:Speed', namespaces))
       
       track_point
     end
